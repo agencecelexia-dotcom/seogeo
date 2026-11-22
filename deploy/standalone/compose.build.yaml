@@ -1,0 +1,12 @@
+# Builds the standalone image from this checkout instead of pulling it:
+#   export COMPOSE_FILE=deploy/standalone/compose.yaml:deploy/standalone/compose.build.yaml
+#   docker compose up -d --build
+x-build: &build
+  image: seogeo-private:local
+  build:
+    context: ../..
+    dockerfile: deploy/standalone/Dockerfile
+services:
+  runtime: *build
+  init: *build
+  crawl-gateway: *build

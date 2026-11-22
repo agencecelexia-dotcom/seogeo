@@ -1,0 +1,1 @@
+ALTER TABLE "vercel_audit_scratchpads" ADD CONSTRAINT "vercel_audit_scratchpads_audit_id_audits_id_fk" FOREIGN KEY ("audit_id") REFERENCES "public"."audits"("id") ON DELETE cascade ON UPDATE no action;

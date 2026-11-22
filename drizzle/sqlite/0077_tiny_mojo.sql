@@ -1,0 +1,1 @@
+ALTER TABLE `runtime_blob_objects` ADD `expires_at` text;

@@ -1,0 +1,11 @@
+# Development on loopback only. Production uses password mode through Docker.
+AUTH_MODE=local_noauth
+OPENSEO_TELEMETRY_DISABLED=true
+DO_NOT_TRACK=1
+# Optional server-side credentials; never commit real values.
+DATAFORSEO_API_KEY=
+OPENROUTER_API_KEY=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_PAGESPEED_API_KEY=
+GOOGLE_CRUX_API_KEY=

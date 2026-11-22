@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "tanstack-start",
+  "buildCommand": "pnpm build:vercel",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/workflows",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "env": {
+    "RUNTIME_PLATFORM": "vercel",
+    "AUTH_MODE": "password",
+    "DATABASE_PROVIDER": "postgres",
+    "OPENSEO_TELEMETRY_DISABLED": "true",
+    "DO_NOT_TRACK": "1"
+  }
+}
