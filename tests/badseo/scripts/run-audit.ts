@@ -10,8 +10,8 @@
  * Every actual detection call below is imported straight from ../src.
  *
  * From the repository root, with the BadSEO dev server running:
- *   pnpm --dir tests/badseo run audit http://localhost:8787
- *   pnpm --dir tests/badseo run audit http://host:port
+ *   pnpm badseo:audit http://localhost:8787
+ *   pnpm badseo:audit http://host:port
  */
 import { crawlPage } from "../../../src/server/workflows/site-audit-workflow-helpers";
 import { createCrawlThrottle } from "../../../src/server/lib/audit/crawl-throttle";

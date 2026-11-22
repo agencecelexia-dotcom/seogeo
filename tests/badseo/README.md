@@ -1,4 +1,4 @@
-# badseo.dev
+# BadSEO — fixtures locales
 
 **A test site full of SEO mistakes.**
 
@@ -36,8 +36,8 @@ Browse them all on the homepage at `/#issues`.
 
 ## How it's built
 
-badseo.dev is a TanStack Start app deployed to a Cloudflare Worker, following
-the same Vite and Cloudflare setup as the repository's `web/` app.
+This directory is a local audit fixture of the main repository. It uses the
+root dependencies and has no independent package or Vercel deployment.
 
 TanStack React routes render the healthy homepage and privacy policy.
 A TanStack catch-all server route keeps the deliberate fixtures as raw
@@ -68,9 +68,8 @@ in the footer. The choice is stored only in the visitor's browser.
 
 ```bash
 # from the repository root
-pnpm install --frozen-lockfile          # also needed by the audit harness
-pnpm --dir tests/badseo install --frozen-lockfile
-pnpm --dir tests/badseo run dev               # serves on http://localhost:8787
+pnpm install --frozen-lockfile
+pnpm badseo:dev                       # serves on http://127.0.0.1:8787
 ```
 
 Use the Vite dev server above when running the audit locally. Its sitemap URLs
@@ -91,7 +90,7 @@ privacy policy, and support pages come back clean.
 
 ```bash
 # from the repository root, with the BadSEO dev server running:
-pnpm --dir tests/badseo run audit http://localhost:8787
+pnpm badseo:audit http://localhost:8787
 ```
 
 It prints a per-page pass/fail matrix and an issue-type coverage line, and exits
@@ -136,15 +135,11 @@ Guidelines:
 - **Keep the copy plain.** Say what the page does and why the mistake matters.
   No hype.
 
-## Deploy
-
-Vite builds the TanStack Start client and Worker bundles, then TypeScript checks
-the project before Wrangler deploys it:
+## Build the local fixture
 
 ```bash
-npm run build                          # Vite build + typecheck
-npm run deploy                         # build + wrangler deploy → badseo.dev
+pnpm badseo:build
 ```
 
-The custom-domain routes for `badseo.dev` and `www.badseo.dev` live in
-`wrangler.jsonc`, alongside the TanStack server entry and built asset directory.
+This fixture is excluded from the SEO/GEO production build. Import only the
+repository root in Vercel; all product screens and API routes share that URL.

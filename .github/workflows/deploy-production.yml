@@ -139,7 +139,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm build
+        run: pnpm build:cloudflare
         env:
           POSTHOG_SOURCEMAPS: "true"
           NODE_OPTIONS: --max-old-space-size=8192

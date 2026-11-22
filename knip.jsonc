@@ -34,12 +34,11 @@
     // shadcn components are copied in whole; pages use only some exports
     "src/client/components/ui/**",
   ],
-  // tests/badseo/ is the standalone broken-SEO fixture worker (own deps/config),
-  // like web/ it isn't part of the app's module graph.
+  // BadSEO is a local fixture using the root dependencies. Its sources
+  // are checked separately and are not part of the production module graph.
   "project": [
     "**/*.{js,mjs,ts,tsx}",
     "!src/routeTree.gen.ts",
-    "!web/**",
     // Alchemy state/bundle artifacts (gitignored)
     "!.alchemy/**",
     "!tests/badseo/**",

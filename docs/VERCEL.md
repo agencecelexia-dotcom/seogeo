@@ -1,6 +1,10 @@
 # Déployer SEO / GEO sur Vercel
 
-Le frontend et le backend utilisent TanStack Start, Nitro et les fonctions Node de Vercel. PostgreSQL conserve les données, les sessions, le cache OAuth, les files de travail et leurs points de reprise. Vercel Blob conserve les fichiers en accès **privé**. Ce déploiement ne demande aucun compte Cloudflare.
+**Un seul projet Vercel et une seule URL pour toute la plateforme.** Le frontend et le backend utilisent TanStack Start, Nitro et les fonctions Node de Vercel. PostgreSQL conserve les données, les sessions, le cache OAuth, les files de travail et leurs points de reprise. Vercel Blob conserve les fichiers en accès **privé**. Ce déploiement ne demande aucun compte Cloudflare.
+
+À l’import, sélectionner uniquement la **racine `.`** du dépôt, avec le nom de projet `seogeo`. Les pages, `/api/*`, `/mcp` et les deux routes de cron utilisent ce même domaine. Les crons sont deux routes internes de la même application, pas deux projets à déployer.
+
+Si Vercel affiche encore trois dossiers depuis l’ancien commit, actualiser la page d’import : le site marketing a été retiré et le site de test BadSEO ne possède plus de package séparé. On peut aussi sélectionner directement la racine et ignorer les anciennes suggestions. Voir le réglage [Root Directory de Vercel](https://vercel.com/docs/builds/configure-a-build#root-directory).
 
 Le planificateur appelle `/api/cron` et `/api/cron/workflows` toutes les cinq minutes. La collecte et l’exécution des travaux ont des invocations séparées pour conserver le temps nécessaire aux longues étapes. **Vercel Pro est nécessaire** pour cette fréquence ; Hobby limite les crons à un passage quotidien. Les fonctions sont configurées avec une durée maximale de 800 secondes. Les opérations longues enregistrent leur progression et continuent lors d’un prochain passage. Un travail en attente n’est pas une erreur et peut attendre cinq minutes avant de démarrer. Voir [les limites des crons](https://vercel.com/docs/cron-jobs/usage-and-pricing) et [la durée des fonctions](https://vercel.com/docs/functions/configuring-functions/duration).
 

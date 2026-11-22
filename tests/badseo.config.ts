@@ -15,6 +15,7 @@ export default defineConfig({
   },
   plugins: [
     cloudflare({
+      configPath: new URL("./badseo/wrangler.jsonc", import.meta.url).pathname,
       viteEnvironment: { name: "ssr" },
     }),
     tanstackStart(),
