@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MonitoringRepository } from "./MonitoringRepository";
 import { MonitoringService } from "./MonitoringService";
 import { GscApiError } from "@/server/lib/gscErrors";
@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   ga4Connection: vi.fn(),
   gsc: vi.fn(),
   ga4: vi.fn(),
+  workflow: { get: vi.fn(), create: vi.fn() },
   repo: {
     getSettings: vi.fn(),
     sourceState: vi.fn(),
@@ -46,10 +47,18 @@ vi.mock("@/server/features/gsc/services/GscService", () => ({
 vi.mock("@/server/features/ga4/services/Ga4ReportingService", () => ({
   Ga4ReportingService: { runReport: mocks.ga4 },
 }));
+vi.mock("@/server/vercel/workflows", () => ({
+  createWorkflowBinding: () => mocks.workflow,
+}));
 
 const now = new Date("2026-11-22T12:00:00.000Z");
 const sync = () => MonitoringService.syncProject("site-1", "org-1", now);
 beforeEach(() => {
+  vi.stubEnv("RUNTIME_PLATFORM", "");
+  mocks.workflow.get.mockRejectedValue(
+    new Error("Workflow instance not found"),
+  );
+  mocks.workflow.create.mockResolvedValue({});
   mocks.project.mockResolvedValue({ id: "site-1" });
   mocks.claim.mockResolvedValue("claim");
   mocks.release.mockResolvedValue(undefined);
@@ -62,12 +71,48 @@ beforeEach(() => {
   mocks.repo.sourceState.mockResolvedValue(null);
   mocks.repo.replaceDay.mockResolvedValue(undefined);
   mocks.repo.saveSourceState.mockResolvedValue(undefined);
+  mocks.repo.listDue.mockResolvedValue([
+    { projectId: "site-1", organizationId: "org-1" },
+  ]);
   mocks.gsc.mockResolvedValue({ rows: [] });
   mocks.ga4.mockResolvedValue({
     rows: [],
     pageInfo: { hasMore: false },
     reportMetadata: { hasLimitedData: false },
     request: { currencyCode: "EUR" },
+  });
+});
+afterEach(() => vi.unstubAllEnvs());
+
+describe("Vercel daily monitoring", () => {
+  it("dispatches a durable daily cycle without collecting Google reports in the cron", async () => {
+    vi.stubEnv("RUNTIME_PLATFORM", "vercel");
+    await MonitoringService.runScheduled(now);
+    expect(mocks.workflow.create).toHaveBeenCalledWith({
+      id: "site-1:2026-11-22",
+      params: { projectId: "site-1", organizationId: "org-1" },
+    });
+    expect(mocks.repo.nextRun).toHaveBeenCalledWith(
+      "site-1",
+      "2026-11-23T00:00:00.000Z",
+    );
+    expect(mocks.gsc).not.toHaveBeenCalled();
+    expect(mocks.ga4).not.toHaveBeenCalled();
+  });
+
+  it("keeps an existing daily job even when it has already completed", async () => {
+    vi.stubEnv("RUNTIME_PLATFORM", "vercel");
+    mocks.workflow.get.mockResolvedValue({ id: "site-1:2026-11-22" });
+    await MonitoringService.runScheduled(now);
+    expect(mocks.workflow.create).not.toHaveBeenCalled();
+    expect(mocks.repo.nextRun).toHaveBeenCalled();
+  });
+
+  it("leaves the project due when persisting its workflow fails", async () => {
+    vi.stubEnv("RUNTIME_PLATFORM", "vercel");
+    mocks.workflow.create.mockRejectedValue(new Error("database unavailable"));
+    await MonitoringService.runScheduled(now);
+    expect(mocks.repo.nextRun).not.toHaveBeenCalled();
   });
 });
 

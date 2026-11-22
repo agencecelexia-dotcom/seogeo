@@ -21,7 +21,7 @@ Les écrans de recherche de mots-clés, suivi de positions, visibilité IA, SEO 
 
 ## Développement et déploiement
 
-La cible de cette version est **Vercel pour le frontend et le backend**, avec PostgreSQL connecté depuis le Marketplace et un store Vercel Blob privé. Le [guide Vercel](VERCEL.md) décrit les variables, les migrations, la création du premier administrateur et le développement local. Les tâches de fond reprennent leurs étapes depuis PostgreSQL à chaque passage du cron.
+La cible de cette version est **Vercel pour le frontend et le backend**, avec PostgreSQL connecté depuis le Marketplace et un store Vercel Blob privé. Le [guide Vercel](VERCEL.md) décrit les variables, les migrations, la création du premier administrateur et le développement local. Les crons sont quotidiens pour rester compatibles avec Hobby ; les audits et suivis reprennent leurs étapes depuis PostgreSQL via Vercel Queues, même lorsque le navigateur est fermé.
 
 Le chat intégré SAM dépend encore du moteur d’acteurs Cloudflare et est désactivé sur cette cible. Les recherches, audits, actions et la connexion d’un agent externe par MCP restent accessibles. Les rapports partagés et les embeds restent fermés en mode privé ; la télémétrie est désactivée et aucun service d’envoi de messages n’est configuré.
 
@@ -43,7 +43,7 @@ Les imports servent aux rapports Google génératifs et Bing AI : cette V1 ne si
 
 ## Collecte et interprétation
 
-Le planificateur reprend un jour de données par source et par passage. Il rafraîchit les sept derniers jours disponibles chaque jour, puis remonte progressivement jusqu’à 480 jours, selon la rétention et les quotas des sources. Les données GSC finales ont trois jours de décalage ; GA4 commence à J−1. GSC conserve son fuseau de reporting, GA4 celui de la propriété. Les horodatages de l’interface sont affichés en Europe/Paris.
+Chaque étape reprend un jour de données par source. Sur Vercel, le cron quotidien démarre jusqu’à 14 étapes par site, en arrière-plan : priorité au rafraîchissement des sept derniers jours disponibles, puis remontée progressive jusqu’à 480 jours, selon la rétention et les quotas des sources. Les synchronisations manuelles permettent aussi d’avancer cette couverture. Les données GSC finales ont trois jours de décalage ; GA4 commence à J−1. GSC conserve son fuseau de reporting, GA4 celui de la propriété. Les horodatages de l’interface sont affichés en Europe/Paris.
 
 Le relevé quotidien est plafonné à 1 000 pages par source. Le journal indique les limites de Google, les lignes tronquées, les erreurs, les sources non connectées et les réponses vides. GSC peut ne fournir que ses principales lignes même sous le plafond. Les totaux du site ne sont jamais additionnés aux totaux des pages. Les URL GA4 sont reconstruites à partir de l’hôte et du chemin de la page d’entrée avec HTTPS ; les URL non identifiables restent hors des dossiers de pages. Les rapprochements conservent les différences d’hôte, de paramètres et de slash final.
 
@@ -53,7 +53,7 @@ Les audits hebdomadaires sont en HTML, sans rendu JavaScript payant, jusqu’à 
 
 ## Budget
 
-Valeurs initiales : **15 €/mois pour les données et 5 €/mois pour l’IA**. Le cron toutes les cinq minutes demande Vercel Pro. Son abonnement, les consommations Vercel/Blob/PostgreSQL, les taxes et les prépaiements fournisseurs restent externes au registre. Le plafond global souhaité de 50 € n’est donc pas garanti par le budget API ; surveiller aussi les alertes et limites des services d’hébergement.
+Valeurs initiales : **15 €/mois pour les données et 5 €/mois pour l’IA**. La configuration est compatible avec Hobby et ne demande pas d’abonnement Vercel Pro. Les consommations Vercel/Queues/Blob/PostgreSQL, les taxes et les prépaiements fournisseurs restent externes au registre. Le plafond global souhaité de 50 € n’est donc pas garanti par le budget API ; surveiller aussi les alertes et limites des services d’hébergement.
 
 Les périodes budgétaires sont mensuelles en UTC. Le taux USD→EUR est un taux de planification réglable, pas un cours de change en direct. Chaque appel payé réserve son plafond avant de partir. Un résultat connu ajuste le coût ; un transport interrompu ou un coût incertain conserve la réserve. Un dépassement du tarif attendu suspend les nouvelles opérations payantes. Le bouton de suspension n’annule pas un appel déjà parti.
 

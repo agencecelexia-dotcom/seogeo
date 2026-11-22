@@ -5,6 +5,15 @@ import { WorkflowStore, type WorkflowJob } from "./workflowStore";
 import { executeWorkflowSlice } from "./workflowEngine";
 
 async function run(job: WorkflowJob, step: WorkflowStep) {
+  if (job.kind === "backlink-discovery")
+    return (
+      await import("./backlinkDiscoveryWorkflow")
+    ).runBacklinkDiscoveryWorkflow(job, step);
+  if (job.kind === "monitoring-sync")
+    return (await import("./maintenanceWorkflow")).runMaintenanceWorkflow(
+      job,
+      step,
+    );
   const classes = {
     "site-audit": () =>
       import("@/server/workflows/SiteAuditWorkflow").then(
@@ -42,8 +51,9 @@ async function run(job: WorkflowJob, step: WorkflowStep) {
   return runner.run(event, step);
 }
 export async function runDueWorkflows({
-  budgetMs = 650000,
-}: { budgetMs?: number } = {}) {
+  budgetMs = 270000,
+  jobKey,
+}: { budgetMs?: number; jobKey?: string } = {}) {
   if (process.env.RUNTIME_PLATFORM !== "vercel")
     throw new Error("Vercel workflow runner requires RUNTIME_PLATFORM=vercel");
   if (budgetMs < 60000) return { processed: 0, reason: "invocation-budget" };
@@ -51,14 +61,15 @@ export async function runDueWorkflows({
     const now = Date.now();
     const job = await WorkflowStore.claimJob(
       new Date(now).toISOString(),
-      new Date(now + 900000).toISOString(),
+      new Date(now + 330000).toISOString(),
+      jobKey,
     );
     if (!job) return { processed: 0 };
     const result = await executeWorkflowSlice(
       job,
       WorkflowStore,
       (step) => run(job, step),
-      Math.min(budgetMs, 720000),
+      Math.min(budgetMs, 270000),
     );
     if (result.state === "waiting")
       await WorkflowStore.finishJob(job, {
@@ -81,6 +92,12 @@ export async function runDueWorkflows({
               ).slice(0, 4000)
             : null,
       });
-    return { processed: 1, instanceId: job.instanceId, state: result.state };
+    return {
+      processed: 1,
+      jobKey: job.jobKey,
+      instanceId: job.instanceId,
+      state: result.state,
+      nextRunAt: result.state === "waiting" ? result.nextRunAt : undefined,
+    };
   });
 }

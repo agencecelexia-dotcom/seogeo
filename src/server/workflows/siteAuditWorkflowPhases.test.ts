@@ -207,9 +207,13 @@ describe("runLighthousePhase", () => {
 });
 
 describe("app-shell crawl coverage", () => {
-  it.each([false, true])(
-    "allows orphan checks only without unread app shells (shells=%s)",
-    async (hasShells) => {
+  it.each([
+    { hasShells: false, truncated: false },
+    { hasShells: true, truncated: false },
+    { hasShells: false, truncated: true },
+  ])(
+    "allows orphan checks only with complete discovery and readable pages (%j)",
+    async ({ hasShells, truncated }) => {
       vi.mocked(AuditRepository.hasPagesForAudit).mockResolvedValue(true);
       vi.mocked(runCrawlPhase).mockResolvedValue({
         pagesCrawled: 2,
@@ -236,7 +240,7 @@ describe("app-shell crawl coverage", () => {
           callback: () => Promise<unknown>,
         ) => {
           if (name === "discover-urls-v2")
-            return { robotsText: "", seededCount: 2 };
+            return { robotsText: "", seededCount: 2, truncated };
           return callback();
         },
       );
@@ -249,8 +253,15 @@ describe("app-shell crawl coverage", () => {
       });
       expect(finalize).toHaveBeenCalledWith({
         startUrl: "https://example.com/",
-        crawlCompleted: !hasShells,
+        crawlCompleted: !hasShells && !truncated,
       });
+      if (truncated)
+        expect(AuditRepository.insertIssues).toHaveBeenCalledWith(
+          "audit-1",
+          expect.arrayContaining([
+            expect.objectContaining({ issueType: "crawl-time-limit" }),
+          ]),
+        );
     },
   );
 });

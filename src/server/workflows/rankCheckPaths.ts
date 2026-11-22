@@ -235,6 +235,12 @@ export async function runQueuedTasks(
   }
   const collected: RankCheckResultWithDevice[] = [];
   const fewEnoughToCarry = Math.floor(pending.length * STRAGGLER_SHARE);
+  // One 60s provider wave per checkpoint on Hobby; the original 500-task
+  // step can require twenty waves when the upstream is slow.
+  const tasksPerCollect =
+    process.env.RUNTIME_PLATFORM === "vercel"
+      ? TASK_GET_CONCURRENCY
+      : TASK_GETS_PER_COLLECT;
 
   // A collect failure (past its retries) leaves that step's tasks pending for
   // the next round instead of failing the run.
@@ -252,12 +258,12 @@ export async function runQueuedTasks(
     const paced = pending.length > TASK_GET_CONCURRENCY;
     const stillPending: PostedRankCheckTask[] = [];
     let canMoveOn = false;
-    for (let i = 0; i < pending.length; i += TASK_GETS_PER_COLLECT) {
-      const batch = pending.slice(i, i + TASK_GETS_PER_COLLECT);
+    for (let i = 0; i < pending.length; i += tasksPerCollect) {
+      const batch = pending.slice(i, i + tasksPerCollect);
       // The first chunk keeps the name a round's only step had, so a run in
       // flight across a deploy replays its finished steps.
-      const chunk = i / TASK_GETS_PER_COLLECT;
-      const collectLabel = `${label}collect-${round}${chunk > 0 ? `-${chunk}` : ""}`;
+      const chunk = i / tasksPerCollect;
+      const collectLabel = `${label}collect-${round}${process.env.RUNTIME_PLATFORM === "vercel" ? "-hobby" : ""}${chunk > 0 ? `-${chunk}` : ""}`;
       try {
         // Results come back as the step's output, so a replay sees them too,
         // and so does the clock reading that decides whether to move on.

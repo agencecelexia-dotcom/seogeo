@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte } from "drizzle-orm";
+import { and, eq, exists, isNull, lte } from "drizzle-orm";
 import { db } from "@/db";
 import {
   member,
@@ -23,7 +23,11 @@ async function save(input: typeof settings.$inferInsert) {
     .onConflictDoUpdate({ target: settings.projectId, set: input });
   return get(input.projectId);
 }
-async function listDue(stamp: string) {
+function dueProjects(
+  stamp: string,
+  projectId?: string,
+  expectedNextRunAt?: string,
+) {
   return db
     .select({
       settings,
@@ -45,10 +49,23 @@ async function listDue(stamp: string) {
         eq(settings.enabled, true),
         lte(settings.nextRunAt, stamp),
         isNull(projects.archivedAt),
+        projectId ? eq(settings.projectId, projectId) : undefined,
+        expectedNextRunAt
+          ? eq(settings.nextRunAt, expectedNextRunAt)
+          : undefined,
       ),
-    )
-    .orderBy(settings.nextRunAt)
-    .limit(2);
+    );
+}
+async function listDue(stamp: string) {
+  return dueProjects(stamp).orderBy(settings.nextRunAt).limit(2);
+}
+async function findDueProject(projectId: string, expectedNextRunAt: string) {
+  const rows = await dueProjects(
+    new Date().toISOString(),
+    projectId,
+    expectedNextRunAt,
+  ).limit(1);
+  return rows.at(0) ?? null;
 }
 async function claim(
   projectId: string,
@@ -70,6 +87,25 @@ async function claim(
         eq(settings.projectId, projectId),
         eq(settings.enabled, true),
         eq(settings.nextRunAt, expectedNextRunAt),
+        exists(
+          db
+            .select({ id: projects.id })
+            .from(projects)
+            .innerJoin(
+              member,
+              and(
+                eq(member.organizationId, projects.organizationId),
+                eq(member.userId, settings.authorizedByUserId),
+              ),
+            )
+            .innerJoin(user, eq(user.id, member.userId))
+            .where(
+              and(
+                eq(projects.id, settings.projectId),
+                isNull(projects.archivedAt),
+              ),
+            ),
+        ),
       ),
     )
     .returning({ projectId: settings.projectId });
@@ -87,6 +123,7 @@ export const WorkbenchDiscoveryRepository = {
   get,
   save,
   listDue,
+  findDueProject,
   claim,
   finish,
 };

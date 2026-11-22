@@ -242,11 +242,15 @@ async function syncProject(
         ),
       );
     const progressed = results.includes("synced");
+    const nextDay = new Date(now);
+    nextDay.setUTCHours(24, 0, 0, 0);
     await MonitoringRepository.nextRun(
       projectId,
-      new Date(
-        now.getTime() + (progressed ? 5 * 60_000 : 24 * 60 * 60_000),
-      ).toISOString(),
+      process.env.RUNTIME_PLATFORM === "vercel"
+        ? nextDay.toISOString()
+        : new Date(
+            now.getTime() + (progressed ? 5 * 60_000 : 24 * 60 * 60_000),
+          ).toISOString(),
     );
     return {
       status: progressed
@@ -260,12 +264,45 @@ async function syncProject(
   }
 }
 
-async function runScheduled() {
+async function runScheduled(now = new Date()) {
   await MonitoringRepository.initializeProjects();
-  const due = await MonitoringRepository.listDue(new Date().toISOString());
+  const due = await MonitoringRepository.listDue(now.toISOString());
+  if (process.env.RUNTIME_PLATFORM === "vercel") {
+    const { createWorkflowBinding } = await import("@/server/vercel/workflows");
+    const workflow = createWorkflowBinding<{
+      projectId: string;
+      organizationId: string;
+    }>("monitoring-sync");
+    const nextDay = new Date(now);
+    nextDay.setUTCHours(24, 0, 0, 0);
+    for (const project of due) {
+      try {
+        const id = `${project.projectId}:${now.toISOString().slice(0, 10)}`;
+        const existing = await workflow.get(id).catch((error: unknown) => {
+          if (
+            error instanceof Error &&
+            error.message === "Workflow instance not found"
+          )
+            return null;
+          throw error;
+        });
+        if (!existing) await workflow.create({ id, params: project });
+        await MonitoringRepository.nextRun(
+          project.projectId,
+          nextDay.toISOString(),
+        );
+      } catch (error) {
+        console.warn("monitoring.project_failed", {
+          projectId: project.projectId,
+          code: errorCode(error),
+        });
+      }
+    }
+    return;
+  }
   for (const project of due) {
     try {
-      await syncProject(project.projectId, project.organizationId);
+      await syncProject(project.projectId, project.organizationId, now);
     } catch (error) {
       console.warn("monitoring.project_failed", {
         projectId: project.projectId,

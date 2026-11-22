@@ -71,11 +71,17 @@ export async function readWorkflowStatus<P>(
 
 /**
  * An AI visibility, rank or local rank check still active after this long is stuck:
- * the slowest that finished on hosted took under 6 hours. Its instance may
- * still report "running" (a frozen step on the Docker edition stays
+ * the slowest that finished on hosted took under 6 hours. Vercel allows 48 hours
+ * so a missed queue publication survives the daily recovery cron and its jitter.
+ * Its instance may still report "running" (a frozen step on Docker stays
  * "running" for good), so the run would otherwise block its tracker forever.
  */
-export const STUCK_RUN_AFTER_MS = 12 * 60 * 60_000;
+export const STUCK_RUN_AFTER_MS =
+  (typeof process !== "undefined" && process.env.RUNTIME_PLATFORM === "vercel"
+    ? 48
+    : 12) *
+  60 *
+  60_000;
 
 /**
  * Stops a stuck instance, so it can no longer post paid calls after its run is

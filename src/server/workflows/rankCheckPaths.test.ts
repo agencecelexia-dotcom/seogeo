@@ -2,6 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
 import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
 import { retryRankChecks } from "./rankCheckRetries";
+import {
+  runQueuedTasks,
+  type RankCheckResultWithDevice,
+} from "./rankCheckPaths";
 
 const mocks = vi.hoisted(() => ({
   getSnapshotsForRun: vi.fn(),
@@ -82,6 +86,7 @@ function retry(
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 beforeEach(() => {
@@ -102,6 +107,33 @@ beforeEach(() => {
 });
 
 describe("retryRankChecks", () => {
+  it("checkpoints each Vercel provider read wave separately", async () => {
+    vi.stubEnv("RUNTIME_PLATFORM", "vercel");
+    vi.useFakeTimers();
+    const context = checkContext(
+      Array.from({ length: 51 }, (_, i) => `kw_${i}`),
+    );
+    const onCollected = vi.fn<
+      (rows: RankCheckResultWithDevice[]) => Promise<void>
+    >(async () => {});
+    const running = runQueuedTasks(
+      step,
+      context,
+      context.keywords.map(({ id, keyword }) => ({
+        keywordId: id,
+        keyword,
+        device: "desktop",
+      })),
+      "",
+      { onCollected, pollIntervals: ["1 second"] },
+    );
+    await vi.runAllTimersAsync();
+    const result = await running;
+    expect(result.collected).toHaveLength(51);
+    expect(onCollected.mock.calls.map(([rows]) => rows.length)).toEqual([
+      25, 25, 1,
+    ]);
+  });
   it("reads a keyword its first read found only once", async () => {
     mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_0", 5)]);
 

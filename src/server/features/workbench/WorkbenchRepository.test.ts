@@ -185,3 +185,23 @@ it("deduplicates a concurrent prospect discovery without creating an orphan hist
     await repository.findProspect("project", row.sourceUrl, row.targetUrl),
   ).toMatchObject({ id: "first" });
 });
+it("revalidates queued discovery authorization and its exact monthly slot before claiming", async () => {
+  await discovery.save({
+    projectId: "project",
+    authorizedByUserId: "user",
+    enabled: true,
+    targetUrl: "https://site.fr/",
+    nextRunAt: "2026-01-01",
+    updatedAt: "2026-01-01",
+  });
+  await database.client!.execute("INSERT INTO member VALUES ('org', 'user')");
+  expect(await discovery.findDueProject("project", "2026-01-01")).toMatchObject(
+    { organizationId: "org" },
+  );
+  expect(await discovery.findDueProject("project", "2025-12-01")).toBeNull();
+  await database.client!.execute("DELETE FROM member");
+  expect(await discovery.findDueProject("project", "2026-01-01")).toBeNull();
+  expect(
+    await discovery.claim("project", "2026-01-01", "2026-02-01", "2026-01-01"),
+  ).toBe(false);
+});

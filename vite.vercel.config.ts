@@ -57,7 +57,23 @@ export default defineConfig(({ mode }) => {
       nitro({
         preset: local ? "node-server" : "vercel",
         alias: runtimeAliases,
-        vercel: { functions: { runtime: "nodejs24.x", maxDuration: 800 } },
+        plugins: [
+          fileURLToPath(
+            new URL("./src/server/vercel/queuePlugin.ts", import.meta.url),
+          ),
+        ],
+        vercel: {
+          functions: { runtime: "nodejs24.x", maxDuration: 300 },
+          queues: {
+            triggers: [
+              {
+                topic: "seogeo-workflows",
+                retryAfterSeconds: 60,
+                initialDelaySeconds: 2,
+              },
+            ],
+          },
+        },
       }),
       react(),
       tailwindcss(),

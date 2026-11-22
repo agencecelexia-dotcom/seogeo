@@ -76,6 +76,29 @@ describe("discoverUrls", () => {
 
     expect(urls).toContain("https://example.com/");
   });
+  it("reports partial discovery instead of starting another sitemap wave past its invocation budget", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.endsWith("/robots.txt"))
+          return new Response("User-agent: *\nAllow: /");
+        vi.setSystemTime(Date.now() + 160000);
+        return new Response(
+          "<sitemapindex><sitemap><loc>https://example.com/shard.xml</loc></sitemap></sitemapindex>",
+          { headers: { "content-type": "application/xml" } },
+        );
+      }),
+    );
+    const result = await discoverUrls(
+      "https://example.com",
+      50,
+      undefined,
+      180000,
+    );
+    expect(result.truncated).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("parseRobotsTxt", () => {

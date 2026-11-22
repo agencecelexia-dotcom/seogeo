@@ -243,4 +243,33 @@ describe("prospect evidence", () => {
       vi.mocked(BacklinksService).profileBacklinksPage.mock.calls,
     ).toHaveLength(0);
   });
+  it("does not start another paid discovery without time for its provider call and SQL margin", async () => {
+    vi.mocked(ProjectContextRepository.listCompetitors).mockResolvedValue([
+      {
+        id: "competitor",
+        projectId: "project",
+        domain: "competitor.fr",
+        name: null,
+        notes: null,
+        updatedAt: "2026-01-01",
+        updatedBy: "user",
+      },
+    ]);
+    expect(
+      await WorkbenchService.discoverProspects(
+        "project",
+        "https://site.fr/page",
+        { organizationId: "org", userId: "user", userEmail: "user@site.fr" },
+        { deadlineAt: Date.now() + 89000 },
+      ),
+    ).toMatchObject({
+      competitors: 0,
+      configuredCompetitors: 1,
+      timeLimited: true,
+      added: 0,
+    });
+    expect(
+      vi.mocked(BacklinksService).profileBacklinksPage.mock.calls,
+    ).toHaveLength(0);
+  });
 });

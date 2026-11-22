@@ -44,6 +44,7 @@ async function createJob(input: {
 async function claimJob(
   stamp: string,
   leaseUntil: string,
+  jobKey?: string,
 ): Promise<WorkflowJob | null> {
   return withPgClient(async () => {
     const token = crypto.randomUUID();
@@ -52,8 +53,20 @@ async function claimJob(
     }>(sql`UPDATE vercel_workflow_jobs SET state='running', lease_token=${token}, lease_until=${leaseUntil}, updated_at=${stamp}
       WHERE job_key=(SELECT job_key FROM vercel_workflow_jobs WHERE state IN ('queued','waiting','running')
       AND next_run_at<=${stamp} AND (lease_until IS NULL OR lease_until<=${stamp})
+      ${jobKey === undefined ? sql`` : sql`AND job_key=${jobKey}`}
       ORDER BY next_run_at,created_at LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING job_key`);
     return rows[0] ? getJob(rows[0].job_key) : null;
+  });
+}
+async function listRunnableJobs(limit = 100): Promise<string[]> {
+  return withPgClient(async () => {
+    const stamp = new Date().toISOString();
+    const rows = await pgDb.execute<{ job_key: string }>(sql`
+      SELECT job_key FROM vercel_workflow_jobs
+      WHERE state IN ('queued','waiting','running') AND next_run_at<=${stamp}
+      AND (lease_until IS NULL OR lease_until<=${stamp})
+      ORDER BY next_run_at,created_at LIMIT ${Math.max(1, Math.min(100, limit))}`);
+    return rows.map((row) => row.job_key);
   });
 }
 async function ownsLease(job: JobLease) {
@@ -152,6 +165,7 @@ export const WorkflowStore = {
   getJob,
   createJob,
   claimJob,
+  listRunnableJobs,
   ownsLease,
   getStep,
   saveStep,

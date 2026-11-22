@@ -194,6 +194,10 @@ it("drains a parallel step whose SQL admission is still pending when another ste
 });
 it("yields before a step that cannot fit and admits it on the next invocation", async () => {
   const store = persistence();
+  store.ownsLease = async () => {
+    vi.setSystemTime(Date.now() + 1000);
+    return true;
+  };
   const longStep = vi.fn(async () => "done");
   const workflow: Parameters<typeof executeWorkflowSlice>[2] = async (step) => {
     await step.do("prepare", { timeout: "2 minutes" }, async () => {
@@ -207,10 +211,10 @@ it("yields before a step that cannot fit and admits it on the next invocation", 
     );
   };
   expect(
-    await executeWorkflowSlice(job, store, workflow, 650000),
+    await executeWorkflowSlice(job, store, workflow, 270000),
   ).toMatchObject({ state: "waiting" });
   expect(longStep).not.toHaveBeenCalled();
-  expect(await executeWorkflowSlice(job, store, workflow, 650000)).toEqual({
+  expect(await executeWorkflowSlice(job, store, workflow, 270000)).toEqual({
     state: "complete",
     output: "done",
   });

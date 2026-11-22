@@ -116,6 +116,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@vercel/blob": "^2.9.0",
     "@vercel/functions": "^3.11.3",
+    "@vercel/queue": "^0.11.0",
     "agents": "0.28.1",
     "ai": "^6.0.199",
     "autumn-js": "^1.3.26",

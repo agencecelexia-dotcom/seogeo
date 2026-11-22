@@ -66,7 +66,7 @@ export async function executeWorkflowSlice(
   job: WorkflowJob,
   store: Store,
   run: (step: WorkflowStep) => Promise<unknown>,
-  budgetMs = 650000,
+  budgetMs = 270000,
 ): Promise<Yield | Finished> {
   const startedAt = Date.now();
   let yielded = false;
@@ -138,12 +138,14 @@ export async function executeWorkflowSlice(
         });
         throw restoreError(text);
       }
-      const timeoutMs = milliseconds(config?.timeout, 600000);
-      if (timeoutMs > 600000)
-        throw new Error(
-          "Workflow step exceeds Vercel’s supported ten-minute step ceiling",
-        );
-      if (Date.now() - startedAt + timeoutMs + 30000 > budgetMs)
+      // Cloudflare declarations allow 5–10 minutes. Node callbacks use smaller
+      // crawl/provider batches; their admission envelope must fit Hobby's 300s
+      // function limit even when replaying those older declarations.
+      const timeoutMs = Math.min(milliseconds(config?.timeout, 230000), 230000);
+      if (
+        Date.now() - startedAt + timeoutMs + 20000 >
+        Math.min(budgetMs, 270000)
+      )
         return suspend(new Date(Date.now() + 1000).toISOString());
       if (
         !(await store.saveStep(job, {

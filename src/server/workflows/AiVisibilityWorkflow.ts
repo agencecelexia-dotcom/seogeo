@@ -154,9 +154,24 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
       const remaining = pending;
       let round: Awaited<ReturnType<typeof collectAiRound>>;
       try {
-        round = await pgStep(step, `read-${name}`, COLLECT_STEP, () =>
-          collectAiRound(runId, remaining, canRetry),
-        );
+        round = { pending: [], retry: [] };
+        const batchSize =
+          process.env.RUNTIME_PLATFORM === "vercel"
+            ? 25
+            : Math.max(1, remaining.length);
+        for (let offset = 0; offset < remaining.length; offset += batchSize) {
+          const batch = remaining.slice(offset, offset + batchSize);
+          const suffix =
+            process.env.RUNTIME_PLATFORM === "vercel" ? `-hobby-${offset}` : "";
+          const result = await pgStep(
+            step,
+            `read-${name}${suffix}`,
+            COLLECT_STEP,
+            () => collectAiRound(runId, batch, canRetry),
+          );
+          round.pending.push(...result.pending);
+          round.retry.push(...result.retry);
+        }
       } catch (error) {
         // Posted tasks keep their credit hold; poll them again next round.
         console.warn(
@@ -267,9 +282,23 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
       // settling here would charge before late answers arrive.
       await step.sleepUntil(`late-wait-${round}`, wakeAt);
       try {
-        pending = await pgStep(step, `late-${round}`, COLLECT_STEP, () =>
-          collectLateAiAnswers(runId, pending),
-        );
+        const remaining = pending;
+        const collected: AiPendingTask[] = [];
+        const batchSize =
+          process.env.RUNTIME_PLATFORM === "vercel"
+            ? 25
+            : Math.max(1, remaining.length);
+        for (let offset = 0; offset < remaining.length; offset += batchSize) {
+          const batch = remaining.slice(offset, offset + batchSize);
+          const suffix =
+            process.env.RUNTIME_PLATFORM === "vercel" ? `-hobby-${offset}` : "";
+          collected.push(
+            ...(await pgStep(step, `late-${round}${suffix}`, COLLECT_STEP, () =>
+              collectLateAiAnswers(runId, batch),
+            )),
+          );
+        }
+        pending = collected;
       } catch (error) {
         // Read again next round.
         console.warn(

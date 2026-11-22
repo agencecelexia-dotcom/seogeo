@@ -5,9 +5,15 @@ import { handleCronRequest } from "./cron";
 const state = vi.hoisted(() => ({
   database: null as PGlite | null,
   run: vi.fn<() => Promise<unknown>>(),
+  list: vi.fn<() => Promise<string[]>>(),
+  enqueue: vi.fn<() => Promise<void>>(),
 }));
 vi.mock("./workers", () => ({ env: {} }));
 vi.mock("./workflows", () => ({ runDueWorkflows: state.run }));
+vi.mock("./workflowStore", () => ({
+  WorkflowStore: { listRunnableJobs: state.list },
+}));
+vi.mock("./workflowQueue", () => ({ enqueueWorkflow: state.enqueue }));
 vi.mock("@/db/pg/client", async () => {
   const { PGlite: Client } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
@@ -21,12 +27,15 @@ beforeAll(async () => {
     PRIMARY KEY(namespace,key))`);
 });
 beforeEach(async () => {
+  vi.stubEnv("VERCEL", "");
   vi.stubEnv(
     "CRON_SECRET",
     "local-cron-test-secret-with-at-least-32-characters",
   );
   await state.database!.exec("TRUNCATE runtime_kv_entries");
   state.run.mockResolvedValue({ processed: 0 });
+  state.list.mockResolvedValue(["site-audit:first", "site-audit:second"]);
+  state.enqueue.mockResolvedValue(undefined);
 });
 afterAll(async () => {
   vi.unstubAllEnvs();
@@ -72,5 +81,18 @@ it("releases a failed invocation so its durable jobs can be resumed", async () =
   await expect(handleCronRequest(request(), "workflows")).rejects.toThrow(
     "database interrupted",
   );
+  expect((await handleCronRequest(request(), "workflows")).status).toBe(200);
+});
+it("recovers jobs through the queue on Vercel without starting a long slice in cron", async () => {
+  vi.stubEnv("VERCEL", "1");
+  state.enqueue.mockRejectedValueOnce(new Error("queue unavailable"));
+  const response = await handleCronRequest(request(), "workflows");
+  expect(response.status).toBe(500);
+  expect(await response.json()).toMatchObject({
+    status: "partial",
+    dispatched: 1,
+  });
+  expect(state.enqueue).toHaveBeenCalledTimes(2);
+  expect(state.run).not.toHaveBeenCalled();
   expect((await handleCronRequest(request(), "workflows")).status).toBe(200);
 });

@@ -60,6 +60,10 @@ interface AiRunMarket {
  * transport error or a timeout can hide a charge, so it is never retried.
  */
 const AI_ANSWER_ATTEMPTS = 3;
+// A live request may take 150s. A second wave cannot fit Vercel Hobby's
+// five-minute invocation; each failed answer remains visible for manual retry.
+const answerAttempts = () =>
+  process.env.RUNTIME_PLATFORM === "vercel" ? 1 : AI_ANSWER_ATTEMPTS;
 /** Pause before a new attempt, so a short provider outage can clear. */
 const AI_RETRY_DELAY_MS = 3_000;
 
@@ -103,15 +107,19 @@ export async function prepareAiRun(
     prompt: row.prompt,
     engine: row.engine,
   }));
+  // Keep each Hobby checkpoint to a small parallel wave; each request may
+  // wait up to 150s and still needs time to persist its evidence.
+  const answersPerStep =
+    process.env.RUNTIME_PLATFORM === "vercel" ? 4 : AI_LIVE_ANSWERS_PER_STEP;
   const modelBatches = engineBatches(
     tasks.filter((task) => aiEngineUsesModelApi(task.engine)),
-    AI_LIVE_ANSWERS_PER_STEP,
+    answersPerStep,
   );
   const answers = tasks.filter((task) => !aiEngineUsesModelApi(task.engine));
   if (live) {
     const batches: AiLiveTask[][] = [];
-    for (let i = 0; i < answers.length; i += AI_LIVE_ANSWERS_PER_STEP)
-      batches.push(answers.slice(i, i + AI_LIVE_ANSWERS_PER_STEP));
+    for (let i = 0; i < answers.length; i += answersPerStep)
+      batches.push(answers.slice(i, i + answersPerStep));
     return { market, modelBatches, live, batches };
   }
   return {
@@ -202,7 +210,7 @@ export async function collectAiLiveBatch(
       if (
         result.status === "failed" &&
         result.retryable &&
-        attempt < AI_ANSWER_ATTEMPTS
+        attempt < answerAttempts()
       ) {
         retry.push(task);
         continue;
@@ -291,7 +299,7 @@ export async function collectAiModelBatch(
           if (
             cause instanceof DataforseoChargedTaskError &&
             cause.code === "UPSTREAM_UNAVAILABLE" &&
-            attempt < AI_ANSWER_ATTEMPTS
+            attempt < answerAttempts()
           ) {
             await waitBeforeRetry();
             continue;

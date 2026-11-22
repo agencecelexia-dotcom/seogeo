@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
 import { AiVisibilityWorkflow } from "./AiVisibilityWorkflow";
 
@@ -7,7 +7,14 @@ const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   live: vi.fn(),
   model: vi.fn(),
-  collect: vi.fn(),
+  collect:
+    vi.fn<
+      (
+        runId: string,
+        tasks: unknown[],
+        canRetry: boolean,
+      ) => Promise<{ pending: unknown[]; retry: unknown[] }>
+    >(),
   late: vi.fn(),
   settle: vi.fn(),
   finalize: vi.fn(),
@@ -92,8 +99,24 @@ beforeEach(() => {
   mocks.collect.mockResolvedValue({ pending: [], retry: [] });
   mocks.late.mockResolvedValue([]);
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe("AI visibility workflow", () => {
+  it("checkpoints Vercel queued reads in bounded provider waves", async () => {
+    vi.stubEnv("RUNTIME_PLATFORM", "vercel");
+    mocks.post.mockResolvedValue({
+      pending: Array.from({ length: 26 }, (_, index) => ({
+        ...task,
+        tag: `answer-${index}`,
+      })),
+      hold,
+    });
+    await execute();
+    expect(mocks.collect.mock.calls.map(([, rows]) => rows.length)).toEqual([
+      25, 25, 2,
+    ]);
+    expect(mocks.finalize).toHaveBeenCalledOnce();
+  });
   it("posts each batch in a step that never retries, then collects and finalizes", async () => {
     await execute();
     expect(mocks.post).toHaveBeenCalledTimes(2);

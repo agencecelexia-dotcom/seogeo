@@ -179,6 +179,7 @@ async function discoverProspects(
   projectId: string,
   targetUrl: string,
   billing: BillingCustomerContext,
+  options: { deadlineAt?: number } = {},
 ) {
   const competitors = (
     await ProjectContextRepository.listCompetitors(projectId)
@@ -186,7 +187,18 @@ async function discoverProspects(
   let added = 0;
   let observed = 0;
   let skipped = 0;
+  let processedCompetitors = 0;
+  let timeLimited = false;
+  const remaining = () =>
+    options.deadlineAt === undefined
+      ? Infinity
+      : options.deadlineAt - Date.now();
   for (const competitor of competitors) {
+    // Reserve the provider's 60s timeout plus 30s for SQL and the final outcome.
+    if (remaining() < 90_000) {
+      timeLimited = true;
+      break;
+    }
     const result = await BacklinksService.profileBacklinksPage(
       {
         target: competitor.domain,
@@ -201,7 +213,13 @@ async function discoverProspects(
       billing,
       { hideSpam: false },
     );
-    for (const row of result.rows) {
+    processedCompetitors++;
+    for (const row of result.rows.slice(0, 100)) {
+      // SQL cannot be cancelled safely after dispatch; stop before another write.
+      if (remaining() < 30_000) {
+        timeLimited = true;
+        break;
+      }
       observed++;
       if (!row.urlFrom || !row.urlTo) {
         skipped++;
@@ -234,8 +252,16 @@ async function discoverProspects(
       });
       if (saved.created) added++;
     }
+    if (timeLimited) break;
   }
-  return { competitors: competitors.length, observed, added, skipped };
+  return {
+    competitors: processedCompetitors,
+    configuredCompetitors: competitors.length,
+    observed,
+    added,
+    skipped,
+    timeLimited,
+  };
 }
 
 export const BacklinkProspectService = {

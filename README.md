@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-`pnpm build` construit la cible Vercel. Les variables, migrations et la création du compte administrateur sont détaillées dans le [guide Vercel](docs/VERCEL.md). Les crons toutes les cinq minutes demandent Vercel Pro.
+`pnpm build` construit la cible Vercel, compatible avec Hobby : crons quotidiens, fonctions de 300 secondes et reprise automatique des audits via Vercel Queues. Les variables, migrations et la création du compte administrateur sont détaillées dans le [guide Vercel](docs/VERCEL.md).
 
 - [Fonctionnalités de la V1](docs/V1_PRIVE.md)
 - [Configuration Vercel](docs/VERCEL.md)

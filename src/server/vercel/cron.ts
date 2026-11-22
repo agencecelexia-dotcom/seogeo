@@ -23,7 +23,7 @@ export async function handleCronRequest(
     return new Response("Unauthorized", { status: 401 });
   const token = crypto.randomUUID();
   const now = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + 780_000).toISOString();
+  const expiresAt = new Date(Date.now() + 330_000).toISOString();
   const lease = await pgDb
     .insert(runtimeKvEntries)
     .values({
@@ -43,9 +43,35 @@ export async function handleCronRequest(
   const errors: string[] = [];
   try {
     if (kind === "workflows") {
+      if (process.env.VERCEL === "1") {
+        const { WorkflowStore } = await import("./workflowStore");
+        const { enqueueWorkflow } = await import("./workflowQueue");
+        const jobKeys = await WorkflowStore.listRunnableJobs();
+        let dispatched = 0;
+        // Bounded recovery only. Normal execution dispatches on creation and
+        // after each checkpoint; the daily cron repairs missed publications.
+        for (let offset = 0; offset < jobKeys.length; offset += 5) {
+          const results = await Promise.allSettled(
+            jobKeys.slice(offset, offset + 5).map((jobKey) =>
+              enqueueWorkflow(jobKey, {
+                deduplicationToken: `recovery:${now.slice(0, 10)}`,
+              }),
+            ),
+          );
+          results.forEach((result) => {
+            if (result.status === "fulfilled") dispatched++;
+            else errors.push("queue-dispatch");
+          });
+        }
+        return Response.json(
+          { status: errors.length ? "partial" : "ok", dispatched, errors },
+          { status: errors.length ? 500 : 200 },
+        );
+      }
+      // Local Node development has no managed Vercel queue.
       const workflows = await (
         await import("./workflows")
-      ).runDueWorkflows({ budgetMs: 650_000 });
+      ).runDueWorkflows({ budgetMs: 270_000 });
       return Response.json({ status: "ok", workflows });
     }
     // Each scheduler already has per-source / per-project CAS guards. One

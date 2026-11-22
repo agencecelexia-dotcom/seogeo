@@ -6,7 +6,9 @@
 
 Si Vercel affiche encore trois dossiers depuis l’ancien commit, actualiser la page d’import : le site marketing a été retiré et le site de test BadSEO ne possède plus de package séparé. On peut aussi sélectionner directement la racine et ignorer les anciennes suggestions. Voir le réglage [Root Directory de Vercel](https://vercel.com/docs/builds/configure-a-build#root-directory).
 
-Le planificateur appelle `/api/cron` et `/api/cron/workflows` toutes les cinq minutes. La collecte et l’exécution des travaux ont des invocations séparées pour conserver le temps nécessaire aux longues étapes. **Vercel Pro est nécessaire** pour cette fréquence ; Hobby limite les crons à un passage quotidien. Les fonctions sont configurées avec une durée maximale de 800 secondes. Les opérations longues enregistrent leur progression et continuent lors d’un prochain passage. Un travail en attente n’est pas une erreur et peut attendre cinq minutes avant de démarrer. Voir [les limites des crons](https://vercel.com/docs/cron-jobs/usage-and-pricing) et [la durée des fonctions](https://vercel.com/docs/functions/configuring-functions/duration).
+La configuration est compatible avec **Vercel Hobby, avec Fluid Compute activé**. `/api/cron` lance les collectes planifiées chaque jour à partir de 03 h UTC ; `/api/cron/workflows` récupère les éventuels travaux non distribués à partir de 04 h UTC. Sur Hobby, ces horaires ont une précision d’une heure. Les fonctions sont limitées à 300 secondes. Voir [les limites des crons](https://vercel.com/docs/cron-jobs/usage-and-pricing) et [la durée des fonctions](https://vercel.com/docs/functions/configuring-functions/duration).
+
+Les audits lancés depuis l’application démarrent via **Vercel Queues** et reprennent automatiquement par tranches, sans attendre le cron du lendemain et sans garder le navigateur ouvert. PostgreSQL conserve leurs points de reprise. Nitro génère le consommateur privé dans le même projet : aucune seconde application ni seconde URL à créer. Queues est disponible en bêta sur tous les plans ; son authentification est automatique sur Vercel. Consulter [la documentation Queues](https://vercel.com/docs/queues) et [ses quotas](https://vercel.com/docs/queues/pricing).
 
 ## Créer les ressources
 
@@ -14,6 +16,8 @@ Le planificateur appelle `/api/cron` et `/api/cron/workflows` toutes les cinq mi
 2. Depuis Storage / Marketplace, connecter une base PostgreSQL, par exemple Neon. Utiliser sa connexion poolée pour `DATABASE_URL`. Garder la base et les fonctions dans des régions proches.
 3. Créer un store Vercel Blob **privé** et connecter sa variable `BLOB_READ_WRITE_TOKEN` au projet.
 4. Ajouter les variables ci-dessous à l’environnement Production. Les previews doivent utiliser une base et un store distincts si vous leur donnez des identifiants ; elles ne doivent pas travailler sur les données de production.
+
+Les suggestions **Turso** et **PostHog** de l’écran d’import ne sont pas nécessaires à cette cible. Utiliser PostgreSQL et Blob privé comme indiqué ci-dessus. Vérifier que **Fluid Compute** est activé dans les paramètres du projet pour bénéficier des fonctions de 300 secondes.
 
 | Variable                  | Valeur attendue                                                                                                                                |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -55,12 +59,13 @@ Se connecter, ajouter les trois sites depuis la vue d’ensemble, puis activer s
 ## Fonctionnement et limites
 
 - Les audits HTML, suivis de positions, suivis IA et SEO local utilisent une file PostgreSQL avec étapes persistées, bail d’exécution et reprise. Une étape payante dont le résultat est incertain n’est pas rejouée automatiquement lorsqu’elle interdit les retries.
+- Les collectes Google quotidiennes et la prospection mensuelle activée dans l’interface sont distribuées par la même file. La prospection s’arrête avant la limite de temps et signale une collecte partielle si nécessaire ; les prospects déjà enregistrés restent disponibles.
 - Le crawler Node résout et vérifie les adresses publiques puis fixe cette résolution pour la connexion ; chaque redirection est revérifiée.
 - Les fichiers restent privés, avec index PostgreSQL et suppression différée des anciennes versions. Ne pas supprimer la base en conservant seulement Blob : les deux sont nécessaires à une restauration.
 - Le chat intégré SAM est désactivé sur Vercel. Connecter un agent externe à `/mcp` depuis **Agent setup** ; les outils et les skills applicatifs restent disponibles.
-- Le budget API initial est de 20 €/mois. Il exclut Vercel Pro, PostgreSQL, Blob, les taxes et les dépassements d’infrastructure. Configurer les alertes Vercel et les limites du fournisseur PostgreSQL ; la cible globale de 50 € demande ce suivi séparé.
+- Le budget API initial est de 20 €/mois. Il exclut PostgreSQL, Blob, les fonctions, Queues, les taxes et les éventuels abonnements d’infrastructure. Aucun abonnement Pro n’est requis par cette configuration. Configurer les alertes Vercel et les limites du fournisseur PostgreSQL ; la cible globale de 50 € demande ce suivi séparé.
 
-Contrôler `/api/health`, la page **Collecte et budget**, les logs de fonctions et l’exécution du cron après la mise en ligne. Un appel au cron sans son secret doit renvoyer 401. Sauvegarder PostgreSQL, les fichiers Blob et les secrets avant une mise à jour. Le dépôt ne contient ni vos comptes connectés ni vos données de production.
+Contrôler `/api/health`, la page **Collecte et budget**, les logs de fonctions, le consommateur du topic `seogeo-workflows` dans Queues et l’exécution du cron après la mise en ligne. Un appel au cron sans son secret doit renvoyer 401. Le cron de récupération republie au maximum 100 travaux en attente par passage ; une indisponibilité de Queues peut retarder leur reprise jusqu’à ce passage. Sauvegarder PostgreSQL, les fichiers Blob et les secrets avant une mise à jour. Le dépôt ne contient ni vos comptes connectés ni vos données de production.
 
 ## Développement Node local
 

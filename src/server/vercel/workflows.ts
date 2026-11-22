@@ -4,8 +4,20 @@ const kinds = [
   "rank-check",
   "ai-visibility",
   "local-rank",
+  "monitoring-sync",
+  "backlink-discovery",
 ] as const;
 type VercelWorkflowKind = (typeof kinds)[number];
+async function dispatch(jobKey: string) {
+  if (process.env.VERCEL !== "1") return;
+  // Persist first: a temporary queue outage must not lose an audit or make its
+  // caller create a second paid job. The daily recovery cron republishes it.
+  try {
+    await (await import("./workflowQueue")).enqueueWorkflow(jobKey);
+  } catch (error) {
+    console.error("[workflows] Queue dispatch failed; job retained", error);
+  }
+}
 const payloadShape = z
   .object({
     projectId: z.string().optional(),
@@ -47,6 +59,7 @@ function instance(jobKey: string, id: string) {
     async restart() {
       const { WorkflowStore } = await import("./workflowStore");
       await WorkflowStore.controlJob(jobKey, "restart");
+      await dispatch(jobKey);
     },
     async pause() {
       const { WorkflowStore } = await import("./workflowStore");
@@ -55,6 +68,7 @@ function instance(jobKey: string, id: string) {
     async resume() {
       const { WorkflowStore } = await import("./workflowStore");
       await WorkflowStore.controlJob(jobKey, "resume");
+      await dispatch(jobKey);
     },
     async sendEvent() {
       throw new Error("This workflow adapter does not consume external events");
@@ -91,6 +105,7 @@ export function createWorkflowBinding<P>(kind: VercelWorkflowKind) {
       throw new Error(
         "Workflow instance already finished; restart it explicitly",
       );
+    await dispatch(jobKey);
     return instance(jobKey, id);
   }
   return {

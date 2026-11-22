@@ -125,6 +125,32 @@ it("grants only one durable lease under concurrent cron claims and fences cancel
     WorkflowStore.controlJob(claimed.jobKey, "restart"),
   ).rejects.toThrow("may still be active");
 });
+it("claims only the delivered job and recovers only due unleased work", async () => {
+  for (const id of ["older", "delivered", "paused", "future"]) {
+    await WorkflowStore.createJob({
+      jobKey: `site-audit:${id}`,
+      kind: "site-audit",
+      instanceId: id,
+      projectId: "project",
+      payloadText: "{}",
+    });
+  }
+  await WorkflowStore.controlJob("site-audit:paused", "pause");
+  await database.client!.exec(
+    "UPDATE vercel_workflow_jobs SET next_run_at='2099-01-01T00:00:00.000Z' WHERE instance_id='future'",
+  );
+  const stamp = new Date().toISOString();
+  expect(
+    await WorkflowStore.claimJob(stamp, "2099-01-01T00:00:00.000Z", "missing"),
+  ).toBeNull();
+  const job = await WorkflowStore.claimJob(
+    stamp,
+    "2099-01-01T00:00:00.000Z",
+    "site-audit:delivered",
+  );
+  expect(job?.instanceId).toBe("delivered");
+  expect(await WorkflowStore.listRunnableJobs()).toEqual(["site-audit:older"]);
+});
 it("recovers an expired SQL lease while refusing an uncertain paid checkpoint", async () => {
   await WorkflowStore.createJob({
     jobKey: "ai-visibility:crash",

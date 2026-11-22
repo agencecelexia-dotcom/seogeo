@@ -283,8 +283,16 @@ export async function discoverUrls(
   origin: string,
   maxPages = 50,
   access?: CrawlerAccess | null,
-): Promise<{ urls: string[]; robotsText: string | null }> {
-  const waitForRateLimit = createRateLimitWait();
+  timeLimitMs = Infinity,
+): Promise<{ urls: string[]; robotsText: string | null; truncated?: boolean }> {
+  const deadline = Date.now() + timeLimitMs;
+  const rateLimitWait = createRateLimitWait();
+  // A retry can wait 60s, then perform two 15s fetch attempts. Never start
+  // that wait near the invocation boundary.
+  const waitForRateLimit: RateLimitWait = (response) =>
+    Date.now() + 90000 > deadline
+      ? Promise.resolve(false)
+      : rateLimitWait(response);
   const robotsText = await fetchRobotsTxtText(origin, access, waitForRateLimit);
   const robots = parseRobotsTxt(origin, robotsText);
 
@@ -306,8 +314,13 @@ export async function discoverUrls(
   let fetchedDocs = 0;
   let failedDocs = 0;
   let timedOutDocs = 0;
+  let truncated = false;
 
   while (queue.length > 0 && allUrls.size < maxDiscoveredUrls) {
+    if (Date.now() + 30000 > deadline) {
+      truncated = true;
+      break;
+    }
     if (fetchedDocs >= MAX_SITEMAP_DOCS) {
       break;
     }
@@ -377,5 +390,6 @@ export async function discoverUrls(
   return {
     urls: Array.from(allUrls),
     robotsText,
+    ...(truncated ? { truncated } : {}),
   };
 }

@@ -6,11 +6,11 @@
   "crons": [
     {
       "path": "/api/cron",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/cron/workflows",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 4 * * *"
     }
   ],
   "env": {
