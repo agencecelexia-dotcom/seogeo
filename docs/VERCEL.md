@@ -14,10 +14,19 @@ Les audits lancés depuis l’application démarrent via **Vercel Queues** et re
 
 1. Pousser ce dépôt dans votre dépôt Git privé, puis l’importer dans Vercel. Utiliser Node.js 24, pnpm et la racine du dépôt. `vercel.json` définit la commande `pnpm build:vercel` et le cron.
 2. Depuis Storage / Marketplace, connecter une base PostgreSQL, par exemple Neon. Utiliser sa connexion poolée pour `DATABASE_URL`. Garder la base et les fonctions dans des régions proches.
-3. Créer un store Vercel Blob **privé** et connecter sa variable `BLOB_READ_WRITE_TOKEN` au projet.
+3. Créer un store Vercel Blob **privé** et le connecter au projet en Production. La connexion fournit `BLOB_STORE_ID` et utilise l’authentification automatique OIDC de Vercel.
 4. Ajouter les variables ci-dessous à l’environnement Production. Les previews doivent utiliser une base et un store distincts si vous leur donnez des identifiants ; elles ne doivent pas travailler sur les données de production.
 
 Les suggestions **Turso** et **PostHog** de l’écran d’import ne sont pas nécessaires à cette cible. Utiliser PostgreSQL et Blob privé comme indiqué ci-dessus. Vérifier que **Fluid Compute** est activé dans les paramètres du projet pour bénéficier des fonctions de 300 secondes.
+
+Avec le CLI Vercel à jour, depuis le dépôt lié au bon projet et à la bonne équipe :
+
+```sh
+vercel storage create seogeo-files --type blob --access private --region iad1
+vercel storage connect seogeo-files --environment production --yes
+```
+
+Réutiliser le store s’il existe déjà : sa création et sa connexion sont deux opérations distinctes. OIDC évite de gérer un jeton statique. En alternative, ajouter `--auth token --add-rw-token` à la commande de connexion pour fournir `BLOB_READ_WRITE_TOKEN`. Voir la [documentation du CLI Storage](https://vercel.com/docs/cli/storage).
 
 ### Si la page indique « Configuration Vercel incomplète »
 
@@ -35,7 +44,8 @@ Générer séparément `BETTER_AUTH_SECRET`, `CRON_SECRET` et `OPENSEO_OPERATOR_
 | `BETTER_AUTH_SECRET`      | Secret aléatoire d’au moins 32 caractères, conservé lors des redéploiements. Chiffrer et déchiffrer les connexions Google dépend de ce secret. |
 | `OPENSEO_OPERATOR_SECRET` | Autre secret aléatoire d’au moins 32 caractères pour l’administration des comptes.                                                             |
 | `CRON_SECRET`             | Autre secret aléatoire d’au moins 32 caractères. Vercel le transmet dans l’en-tête Authorization du cron.                                      |
-| `BLOB_READ_WRITE_TOKEN`   | Jeton du store Blob privé.                                                                                                                     |
+| `BLOB_STORE_ID`           | Identifiant du store Blob privé, fourni par sa connexion au projet ; utilisé avec l’authentification OIDC automatique.                         |
+| `BLOB_READ_WRITE_TOKEN`   | Facultatif : jeton du store privé si la connexion utilise un jeton statique à la place d’OIDC.                                                 |
 
 Générer chaque secret séparément avec `openssl rand -hex 32`. Conserver leurs valeurs dans un gestionnaire de secrets ; ne pas les committer. `.env.vercel.example` contient uniquement les noms et commentaires. Le mode mot de passe, PostgreSQL et la désactivation de télémétrie sont imposés par cette cible.
 
@@ -96,4 +106,4 @@ Arrêter le serveur applicatif avant d’appliquer une migration à PGlite, afin
 
 Pour le parcours Chrome local, créer un compte de test, fournir `PRIVATE_E2E_EMAIL` et `PRIVATE_E2E_PASSWORD` au processus de test, puis exécuter `pnpm test:e2e:private` avec l’app sur le port 3104. Ce test ajoute des lignes `[Validation V1]` ; utiliser une base réservée aux tests.
 
-Les fichiers Blob nécessitent un store de développement ; les actions, imports et budgets n’en ont pas besoin. Ne pas utiliser les clés de production pour les tests.
+Les fichiers Blob nécessitent un store distinct connecté à Development ; les actions, imports et budgets n’en ont pas besoin. Pour utiliser OIDC localement, récupérer les variables Development avec `vercel env pull .env.local --environment development --yes` ; relancer cette commande lorsque le jeton temporaire expire. `BLOB_READ_WRITE_TOKEN` reste une alternative pour ce store de développement. Ne pas utiliser les clés de production pour les tests. Voir la [documentation du CLI Env](https://vercel.com/docs/cli/env).

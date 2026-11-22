@@ -61,3 +61,4 @@ deploy/stripe-app/.build/
 .local/
 
 !.env.vercel.example
+.env*
