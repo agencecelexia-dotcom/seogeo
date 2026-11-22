@@ -12,6 +12,7 @@ import {
   Globe,
   LayoutDashboard,
   Link2,
+  BookOpen,
   MapPin,
   MessageSquare,
   Search,
@@ -35,6 +36,11 @@ const projectNavItems = [
     to: "/p/$projectId/prospects" as const,
     label: "Prospection de liens",
     icon: Link2,
+  },
+  {
+    to: "/p/$projectId/parasite-seo" as const,
+    label: "Parasite SEO",
+    icon: BookOpen,
   },
   {
     to: "/p/$projectId/imports" as const,
@@ -174,6 +180,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/pages"),
         byPath("/p/$projectId/actions"),
         byPath("/p/$projectId/prospects"),
+        byPath("/p/$projectId/parasite-seo"),
         byPath("/p/$projectId/imports"),
       ],
     },

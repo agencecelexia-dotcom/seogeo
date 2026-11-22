@@ -1,4 +1,5 @@
 import { waitUntil as vercelWaitUntil } from "@vercel/functions";
+import { applyVercelEnvironmentDefaults } from "./configuration";
 
 // This module is selected only by the Vercel build. Keep helpers that read
 // process.env aligned with the fixed binding values and the password-only UI.
@@ -7,6 +8,7 @@ process.env.AUTH_MODE = "password";
 process.env.DATABASE_PROVIDER = "postgres";
 process.env.OPENSEO_TELEMETRY_DISABLED = "true";
 process.env.DO_NOT_TRACK = "1";
+applyVercelEnvironmentDefaults();
 
 // Loading adapters only on first I/O avoids a schema -> env -> schema cycle.
 function lazyBinding(load: () => Promise<object>): object {

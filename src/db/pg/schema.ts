@@ -21,3 +21,4 @@ export * from "./imports.schema";
 export * from "./audit-schedule.schema";
 export * from "./vercel-runtime.schema";
 export * from "./vercel-workflows.schema";
+export * from "./external-publications.schema";

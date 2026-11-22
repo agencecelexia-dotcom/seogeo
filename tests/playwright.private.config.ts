@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: "private-workbench.spec.ts",
+  testMatch: ["private-workbench.spec.ts", "parasite-seo.spec.ts"],
   outputDir: "../test-results/private",
   workers: 1,
   timeout: 90_000,

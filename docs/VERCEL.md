@@ -19,11 +19,19 @@ Les audits lancés depuis l’application démarrent via **Vercel Queues** et re
 
 Les suggestions **Turso** et **PostHog** de l’écran d’import ne sont pas nécessaires à cette cible. Utiliser PostgreSQL et Blob privé comme indiqué ci-dessus. Vérifier que **Fluid Compute** est activé dans les paramètres du projet pour bénéficier des fonctions de 300 secondes.
 
+### Si la page indique « Configuration Vercel incomplète »
+
+Le code a été déployé, mais ses ressources ne sont pas encore configurées. Dans **Storage**, créer ou connecter PostgreSQL (par exemple Neon), puis dans **Environment Variables**, renseigner les valeurs de la table pour **Production**. Ne jamais mettre ces secrets dans le dépôt Git ou dans un message de chat.
+
+Si l’intégration fournit seulement `POSTGRES_URL`, cette connexion est aussi reconnue par le runtime et les migrations. `BETTER_AUTH_URL` peut être omise en production lorsque Vercel expose `VERCEL_PROJECT_PRODUCTION_URL` : l’application reprend alors ce domaine HTTPS fourni par la plateforme. Une valeur explicite reste prioritaire ; les previews et le développement doivent toujours avoir leur propre `BETTER_AUTH_URL`. Voir les [variables système Vercel](https://vercel.com/docs/environment-variables/system-environment-variables#vercel_project_production_url).
+
+Générer séparément `BETTER_AUTH_SECRET`, `CRON_SECRET` et `OPENSEO_OPERATOR_SECRET` avec `openssl rand -hex 32`, puis les enregistrer dans Vercel. Appliquer les migrations et créer le premier compte avec les étapes ci-dessous. Après ajout des variables, lancer **Redeploy** : les déploiements déjà construits conservent leurs anciennes valeurs, comme l’indique la [documentation Vercel](https://vercel.com/docs/environment-variables/managing-environment-variables).
+
 | Variable                  | Valeur attendue                                                                                                                                |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`            | URL PostgreSQL poolée fournie par l’intégration.                                                                                               |
 | `POSTGRES_DATABASE_URL`   | Facultative : connexion directe utilisée uniquement pour les migrations.                                                                       |
-| `BETTER_AUTH_URL`         | Origine HTTPS stable de l’application, sans chemin.                                                                                            |
+| `BETTER_AUTH_URL`         | Origine HTTPS stable de l’application, sans chemin ; détectée depuis Vercel en production si elle est omise.                                   |
 | `BETTER_AUTH_SECRET`      | Secret aléatoire d’au moins 32 caractères, conservé lors des redéploiements. Chiffrer et déchiffrer les connexions Google dépend de ce secret. |
 | `OPENSEO_OPERATOR_SECRET` | Autre secret aléatoire d’au moins 32 caractères pour l’administration des comptes.                                                             |
 | `CRON_SECRET`             | Autre secret aléatoire d’au moins 32 caractères. Vercel le transmet dans l’en-tête Authorization du cron.                                      |

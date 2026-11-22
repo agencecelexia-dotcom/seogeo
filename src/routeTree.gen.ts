@@ -64,6 +64,7 @@ import { Route as AppPProjectIdImportsRouteImport } from './routes/_app/p/$proje
 import { Route as AppPProjectIdKeywordsRouteImport } from './routes/_app/p/$projectId/keywords'
 import { Route as AppPProjectIdLocalSeoRouteImport } from './routes/_app/p/$projectId/local-seo'
 import { Route as AppPProjectIdPagesRouteImport } from './routes/_app/p/$projectId/pages'
+import { Route as AppPProjectIdParasiteSeoRouteImport } from './routes/_app/p/$projectId/parasite-seo'
 import { Route as AppPProjectIdPromptExplorerRouteImport } from './routes/_app/p/$projectId/prompt-explorer'
 import { Route as AppPProjectIdProspectsRouteImport } from './routes/_app/p/$projectId/prospects'
 import { Route as AppPProjectIdRankTrackingRouteImport } from './routes/_app/p/$projectId/rank-tracking'
@@ -369,6 +370,12 @@ const AppPProjectIdPagesRoute = AppPProjectIdPagesRouteImport.update({
   path: '/pages',
   getParentRoute: () => AppPProjectIdRouteRoute,
 } as any)
+const AppPProjectIdParasiteSeoRoute =
+  AppPProjectIdParasiteSeoRouteImport.update({
+    id: '/parasite-seo',
+    path: '/parasite-seo',
+    getParentRoute: () => AppPProjectIdRouteRoute,
+  } as any)
 const AppPProjectIdPromptExplorerRoute =
   AppPProjectIdPromptExplorerRouteImport.update({
     id: '/prompt-explorer',
@@ -570,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
   '/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoRouteWithChildren
   '/p/$projectId/pages': typeof AppPProjectIdPagesRoute
+  '/p/$projectId/parasite-seo': typeof AppPProjectIdParasiteSeoRoute
   '/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/p/$projectId/prospects': typeof AppPProjectIdProspectsRoute
   '/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingRouteWithChildren
@@ -646,6 +654,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/imports': typeof AppPProjectIdImportsRoute
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
   '/p/$projectId/pages': typeof AppPProjectIdPagesRoute
+  '/p/$projectId/parasite-seo': typeof AppPProjectIdParasiteSeoRoute
   '/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/p/$projectId/prospects': typeof AppPProjectIdProspectsRoute
   '/p/$projectId/sam': typeof AppPProjectIdSamRoute
@@ -728,6 +737,7 @@ export interface FileRoutesById {
   '/_app/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
   '/_app/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoRouteWithChildren
   '/_app/p/$projectId/pages': typeof AppPProjectIdPagesRoute
+  '/_app/p/$projectId/parasite-seo': typeof AppPProjectIdParasiteSeoRoute
   '/_app/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/_app/p/$projectId/prospects': typeof AppPProjectIdProspectsRoute
   '/_app/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingRouteWithChildren
@@ -810,6 +820,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/keywords'
     | '/p/$projectId/local-seo'
     | '/p/$projectId/pages'
+    | '/p/$projectId/parasite-seo'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/prospects'
     | '/p/$projectId/rank-tracking'
@@ -886,6 +897,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/imports'
     | '/p/$projectId/keywords'
     | '/p/$projectId/pages'
+    | '/p/$projectId/parasite-seo'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/prospects'
     | '/p/$projectId/sam'
@@ -967,6 +979,7 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/keywords'
     | '/_app/p/$projectId/local-seo'
     | '/_app/p/$projectId/pages'
+    | '/_app/p/$projectId/parasite-seo'
     | '/_app/p/$projectId/prompt-explorer'
     | '/_app/p/$projectId/prospects'
     | '/_app/p/$projectId/rank-tracking'
@@ -1416,6 +1429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdPagesRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
+    '/_app/p/$projectId/parasite-seo': {
+      id: '/_app/p/$projectId/parasite-seo'
+      path: '/parasite-seo'
+      fullPath: '/p/$projectId/parasite-seo'
+      preLoaderRoute: typeof AppPProjectIdParasiteSeoRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
     '/_app/p/$projectId/prompt-explorer': {
       id: '/_app/p/$projectId/prompt-explorer'
       path: '/prompt-explorer'
@@ -1696,6 +1716,7 @@ interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdKeywordsRoute: typeof AppPProjectIdKeywordsRoute
   AppPProjectIdLocalSeoRoute: typeof AppPProjectIdLocalSeoRouteWithChildren
   AppPProjectIdPagesRoute: typeof AppPProjectIdPagesRoute
+  AppPProjectIdParasiteSeoRoute: typeof AppPProjectIdParasiteSeoRoute
   AppPProjectIdPromptExplorerRoute: typeof AppPProjectIdPromptExplorerRoute
   AppPProjectIdProspectsRoute: typeof AppPProjectIdProspectsRoute
   AppPProjectIdRankTrackingRoute: typeof AppPProjectIdRankTrackingRouteWithChildren
@@ -1722,6 +1743,7 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdKeywordsRoute: AppPProjectIdKeywordsRoute,
   AppPProjectIdLocalSeoRoute: AppPProjectIdLocalSeoRouteWithChildren,
   AppPProjectIdPagesRoute: AppPProjectIdPagesRoute,
+  AppPProjectIdParasiteSeoRoute: AppPProjectIdParasiteSeoRoute,
   AppPProjectIdPromptExplorerRoute: AppPProjectIdPromptExplorerRoute,
   AppPProjectIdProspectsRoute: AppPProjectIdProspectsRoute,
   AppPProjectIdRankTrackingRoute: AppPProjectIdRankTrackingRouteWithChildren,

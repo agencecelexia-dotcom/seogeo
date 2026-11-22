@@ -15,6 +15,8 @@ pnpm build
 
 `pnpm build` construit la cible Vercel, compatible avec Hobby : crons quotidiens, fonctions de 300 secondes et reprise automatique des audits via Vercel Queues. Les variables, migrations et la création du compte administrateur sont détaillées dans le [guide Vercel](docs/VERCEL.md).
 
+Après le premier déploiement, connecter PostgreSQL et Blob privé, renseigner les secrets, appliquer les migrations puis créer le premier compte. L’écran d’installation indique les variables manquantes ; le déploiement du code seul ne crée pas ces ressources.
+
 - [Fonctionnalités de la V1](docs/V1_PRIVE.md)
 - [Configuration Vercel](docs/VERCEL.md)
 - [Variables à renseigner](.env.vercel.example)

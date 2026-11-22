@@ -10,6 +10,8 @@ import * as sqliteMonitoring from "./monitoring.schema";
 import * as pgMonitoring from "./pg/monitoring.schema";
 import * as sqliteWorkbench from "./workbench.schema";
 import * as pgWorkbench from "./pg/workbench.schema";
+import * as sqliteExternalPublications from "./external-publications.schema";
+import * as pgExternalPublications from "./pg/external-publications.schema";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getTableColumns, getTableName, is, Table } from "drizzle-orm";
@@ -171,6 +173,7 @@ const sqliteAppTables = tablesFrom(
   sqliteAuditSchedule,
   sqliteMonitoring,
   sqliteWorkbench,
+  sqliteExternalPublications,
   sqliteApp,
   sqliteProjectContext,
   sqliteReports,
@@ -191,6 +194,7 @@ const pgAppTables = tablesFrom(
   pgAuditSchedule,
   pgMonitoring,
   pgWorkbench,
+  pgExternalPublications,
   pgApp,
   pgProjectContext,
   pgReports,

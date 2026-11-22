@@ -14,6 +14,7 @@ import { withDataforseoSlots } from "@/server/lib/dataforseo/request-slots";
 import { ENFORCED_CSP } from "@/server/lib/csp";
 import { handleOperatorRequest } from "@/server/standalone/admin";
 import { handleCronRequest } from "./cron";
+import { configurationResponse } from "./configuration";
 
 const startHandler = createStartHandler(defaultStreamHandler);
 const provider = createOpenSeoOAuthProvider((request) =>
@@ -51,17 +52,8 @@ async function handleRequest(request: Request): Promise<Response> {
 
 export default {
   async fetch(request: Request): Promise<Response> {
-    const missing = [
-      "DATABASE_URL",
-      "BETTER_AUTH_URL",
-      "BETTER_AUTH_SECRET",
-      "CRON_SECRET",
-    ].filter((key) => !process.env[key]);
-    if (missing.length)
-      return Response.json(
-        { error: "Configuration Vercel incomplète", missing },
-        { status: 503 },
-      );
+    const setup = configurationResponse(request);
+    if (setup) return setup;
     const response = await withPgClient(() =>
       withDataforseoSlots(() => handleRequest(request)),
     );

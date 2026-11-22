@@ -10,6 +10,8 @@ export default defineConfig({
   schema: "./src/db/pg/schema.ts",
   out: "./drizzle/pg",
   dbCredentials: {
-    url: (process.env.POSTGRES_DATABASE_URL || process.env.DATABASE_URL)!,
+    url: (process.env.POSTGRES_DATABASE_URL ||
+      process.env.DATABASE_URL ||
+      process.env.POSTGRES_URL)!,
   },
 });

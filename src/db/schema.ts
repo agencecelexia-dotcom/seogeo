@@ -58,8 +58,11 @@ import * as sqliteVercelRuntime from "./vercel-runtime.schema";
 import * as pgVercelRuntime from "./pg/vercel-runtime.schema";
 import * as sqliteVercelWorkflows from "./vercel-workflows.schema";
 import * as pgVercelWorkflows from "./pg/vercel-workflows.schema";
+import * as sqliteExternalPublications from "./external-publications.schema";
+import * as pgExternalPublications from "./pg/external-publications.schema";
 
 type AppSchema = typeof sqliteApp &
+  typeof sqliteExternalPublications &
   typeof sqliteVercelRuntime &
   typeof sqliteVercelWorkflows &
   typeof sqliteAuditSchedule &
@@ -89,6 +92,7 @@ const runtimeSchema =
         ...pgVercelWorkflows,
         ...pgAuditSchedule,
         ...pgWorkbench,
+        ...pgExternalPublications,
         ...pgMonitoring,
         ...pgImports,
         ...pgApp,
@@ -113,6 +117,7 @@ const runtimeSchema =
         ...sqliteVercelWorkflows,
         ...sqliteAuditSchedule,
         ...sqliteWorkbench,
+        ...sqliteExternalPublications,
         ...sqliteMonitoring,
         ...sqliteImports,
         ...sqliteApp,
@@ -137,6 +142,7 @@ const runtimeSchema =
 const schema = runtimeSchema as unknown as AppSchema;
 
 export const {
+  externalPublications,
   runtimeKvEntries,
   runtimeBlobObjects,
   runtimeBlobDeletions,
