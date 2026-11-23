@@ -253,6 +253,22 @@ export function AuthPageShell({ children }: { children: React.ReactNode }) {
     // the overflow with no way to scroll to it.
     <div className="flex h-[100dvh] flex-col items-center overflow-y-auto bg-background p-4">
       <div className="m-auto flex w-full flex-col items-center">{children}</div>
+      {import.meta.env.VITE_RUNTIME_PLATFORM === "vercel" ? (
+        <nav
+          aria-label="Informations sur SEO GEO"
+          className="flex shrink-0 flex-wrap justify-center gap-x-5 gap-y-2 pt-6 text-sm text-muted-foreground"
+        >
+          <a href="/about" className="underline underline-offset-4">
+            À propos de SEO GEO
+          </a>
+          <a href="/privacy" className="underline underline-offset-4">
+            Confidentialité
+          </a>
+          <a href="/terms" className="underline underline-offset-4">
+            Conditions d’utilisation
+          </a>
+        </nav>
+      ) : null}
     </div>
   );
 }

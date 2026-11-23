@@ -82,8 +82,16 @@ export function getCurrentAuthRedirectFromHref(href: string) {
  * one lands the user on a blank page. Navigate to these with a document load.
  */
 export function isDocumentRoute(redirectTo: string) {
-  // Both member reports and public shares are served by document handlers.
-  return redirectTo.startsWith("/r/") || redirectTo.startsWith("/s/");
+  // Reports, public shares and the Vercel instance's informational pages are
+  // served by document handlers rather than client components.
+  const pathname = redirectTo.split(/[?#]/, 1)[0];
+  return (
+    redirectTo.startsWith("/r/") ||
+    redirectTo.startsWith("/s/") ||
+    pathname === "/about" ||
+    pathname === "/privacy" ||
+    pathname === "/terms"
+  );
 }
 
 /**

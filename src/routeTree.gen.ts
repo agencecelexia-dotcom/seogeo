@@ -12,10 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthErrorRouteImport } from './routes/auth-error'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRouteImport } from './routes/[.well-known]/http-message-signatures-directory'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
@@ -104,6 +107,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthErrorRoute = AuthErrorRouteImport.update({
   id: '/auth-error',
   path: '/auth-error',
@@ -119,9 +127,19 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -527,10 +545,13 @@ const ApiLocalSeoMapsProjectIdZXYRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/about': typeof AboutRoute
   '/auth-error': typeof AuthErrorRoute
   '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/http-message-signatures-directory': typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
@@ -608,10 +629,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
+  '/about': typeof AboutRoute
   '/auth-error': typeof AuthErrorRoute
   '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/http-message-signatures-directory': typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
@@ -686,10 +710,13 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/about': typeof AboutRoute
   '/auth-error': typeof AuthErrorRoute
   '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/http-message-signatures-directory': typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
@@ -770,10 +797,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/auth-error'
     | '/connect'
     | '/forgot-password'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
     | '/verify-email'
     | '/.well-known/http-message-signatures-directory'
     | '/.well-known/openai-apps-challenge'
@@ -851,10 +881,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/auth-error'
     | '/connect'
     | '/forgot-password'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
     | '/verify-email'
     | '/.well-known/http-message-signatures-directory'
     | '/.well-known/openai-apps-challenge'
@@ -928,10 +961,13 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/_authenticated'
+    | '/about'
     | '/auth-error'
     | '/connect'
     | '/forgot-password'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
     | '/verify-email'
     | '/.well-known/http-message-signatures-directory'
     | '/.well-known/openai-apps-challenge'
@@ -1013,10 +1049,13 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AboutRoute: typeof AboutRoute
   AuthErrorRoute: typeof AuthErrorRoute
   ConnectRoute: typeof ConnectRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TermsRoute: typeof TermsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute: typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute: typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
@@ -1065,6 +1104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth-error': {
       id: '/auth-error'
       path: '/auth-error'
@@ -1086,11 +1132,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify-email': {
@@ -1826,10 +1886,13 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AboutRoute: AboutRoute,
   AuthErrorRoute: AuthErrorRoute,
   ConnectRoute: ConnectRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute:
     Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute,
