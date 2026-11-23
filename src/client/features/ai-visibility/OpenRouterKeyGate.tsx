@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
 import { GateCard } from "@/client/components/GateCard";
 import { QueryError } from "@/client/components/QueryState";
 import { SkeletonPageContent } from "@/client/components/SkeletonPresets";
 import { Button } from "@/client/components/ui/button";
-import { useSamAccess } from "@/client/features/sam/useSamAccess";
+import { getOpenRouterAccessSetupStatus } from "@/serverFunctions/samAccess";
 
 /**
  * AI visibility setup researches the brand and suggests prompts through
@@ -19,16 +20,21 @@ export function OpenRouterKeyGate({
   projectId: string;
   children: ReactNode;
 }) {
-  const access = useSamAccess(projectId);
-  if (access.status === "ready") return children;
-  if (access.status === "checking") return <SkeletonPageContent />;
-  if (access.status === "error")
+  const access = useQuery({
+    queryKey: ["openRouterAccessStatus", projectId],
+    queryFn: () => getOpenRouterAccessSetupStatus({ data: { projectId } }),
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+  });
+  if (access.data?.enabled) return children;
+  if (access.isPending) return <SkeletonPageContent />;
+  if (access.isError && access.data === undefined)
     return (
       <QueryError
         error={access.error}
         fallback="Could not check the OpenRouter API key."
-        onRetry={access.onRetry}
-        isRetrying={access.isRetrying}
+        onRetry={() => void access.refetch()}
+        isRetrying={access.isFetching}
       />
     );
   return (
@@ -65,7 +71,7 @@ export function OpenRouterKeyGate({
             <Button
               size="lg"
               pending={access.isRefetching}
-              onClick={access.onRetry}
+              onClick={() => void access.refetch()}
             >
               Confirm API Key
             </Button>
